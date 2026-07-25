@@ -1,6 +1,6 @@
 # AI Data Visualization Starter
 
-### An AI data analyst powered by [Runtype](https://runtype.com), deployed to [InsForge](https://insforge.dev), with generative charts via [Flint](https://microsoft.github.io/flint-chart/#/).
+### An AI data analyst powered by [Runtype](https://runtype.com), deployed to [InsForge](https://insforge.dev), <br>with generative charts using [Flint](https://microsoft.github.io/flint-chart/#/).
 
 ![The AI Data Visualization analyst answering "What's behind target this week?" with a generated pace-variance dashboard and auditable SQL](./assets/demo-screenshot.png)
 
