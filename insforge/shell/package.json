@@ -1,0 +1,21 @@
+{
+  "name": "ayb-shell",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@mcp-b/webmcp-polyfill": "^3.0.0",
+    "@runtypelabs/persona": "4.11.0",
+    "echarts": "^6.1.0",
+    "flint-chart": "^0.2.1"
+  },
+  "devDependencies": {
+    "typescript": "^5.4.5",
+    "vite": "^5.4.1",
+    "vite-plugin-singlefile": "^2.0.2"
+  }
+}

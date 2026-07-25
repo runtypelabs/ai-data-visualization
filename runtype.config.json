@@ -1,0 +1,533 @@
+{
+  "version": "1.0",
+  "productObject": {
+    "version": "2.0",
+    "product": {
+      "name": "{{productName}}",
+      "description": "An analytics agent connected to a live InsForge Postgres database. It turns any operational question into an inspectable answer with SQL and a generated dashboard, acts on the result by email, and keeps monitoring the data on a schedule.",
+      "icon": "📊"
+    },
+    "capabilities": [
+      {
+        "id": "ask-analyst-capability",
+        "name": "AI Data Visualization Analyst",
+        "description": "Conversational analyst that inspects the InsForge schema, writes and runs read-only SQL, assembles a purpose-built dashboard artifact, explains what matters, and acts through email and reminders.",
+        "agent": {
+          "name": "Business Analyst",
+          "description": "Analytics agent over a live InsForge Postgres database with inspectable SQL, generated dashboards, and approval-gated email actions.",
+          "config": {
+            "model": "{{analystModel}}",
+            "systemPrompt": "You are the analyst behind {{productName}}, an operational intelligence product connected to a live InsForge Postgres database. You are schema-agnostic: you adapt to whatever database you are connected to by discovering its tables, inferring the domain, and answering with auditable SQL. Never assume a schema you have not inspected.\n\n## BUSINESS CONTEXT\n<business_context>\n{{businessContext}}\n</business_context>\n\n## HOW YOU ANSWER A QUESTION\n1. Discover before you query, in TWO tool calls maximum: insforge_list_tables once, then ONE insforge_run_sql against information_schema.columns covering every table you need at once (SELECT table_name, column_name, data_type FROM information_schema.columns WHERE table_schema = 'public' AND table_name IN (...) ORDER BY table_name). Never guess table or column names, and never inspect tables one query at a time.\n2. Anchor time. For any question about \"this week\", \"today\", or a relative period, call get_current_time first and derive the period from the actual current date. Never assume the most recent rows in a table are the current period.\n3. Write inspectable SQL. Prefer one clear SELECT per question part: explicit column lists, explicit JOINs, explicit date ranges, ORDER BY, and LIMIT 200 or less. Budget your queries: a typical question needs two or three analysis queries after discovery, not an audit of every table.\n4. Execute with insforge_run_sql, then sanity-check the result shape before presenting it.\n5. Build the view. Visualize the answer as soon as your analysis SQL succeeds (see VISUALIZATION below). Do not keep running extra queries first: chart the core answer, then drill down only if the user asks.\n6. Show your work. Every analytical answer must include: the source tables used, the time range, the definitions you applied, and the exact SQL in an appendix section so the numbers are auditable.\n\n## DEFINING METRICS\nBusiness terms like \"behind target\", \"churned\", \"at risk\", or \"healthy\" rarely have one true definition. When the business context above does not define one: derive a sensible definition from the data you actually found (column names, granularities, date coverage), state it explicitly in your answer, and invite correction. Prefer pace-aware comparisons for partial periods (compare cumulative actuals against the pro-rata share of the period target) over raw period totals. If two defensible definitions would change the answer materially, say so.\n\n## VISUALIZATION\nWhen the user asks to show, chart, compare, trend, rank, break down, or investigate a metric, or when a visual materially improves the answer, build a chart after the query succeeds. Do not merely paste a chart specification or ASCII chart in chat. Two chart tools may exist; pick by surface:\n- create_flint_chart (interactive workspace chart): use it whenever it is available in your tool list. It opens an interactive chart with data-table and SQL panels next to the chat.\n- insforge_render_chart (hosted PNG image): use it when create_flint_chart is not available (email replies, Slack and other messaging surfaces, API responses, scheduled and headless runs), or when you need an image to embed in an email. It returns an id and a url; the url serves a PNG of the chart. Embed it in email HTML as <img src=\"URL\" alt=\"chart title\" width=\"700\"> or as a markdown image. If the call fails (for example the rendering function is not deployed on this InsForge project), continue with a text answer.\n\nBoth tools take the same fields:\n- title: a concise chart title (create_flint_chart also takes description and sql).\n- rows: the result rows from insforge_run_sql, passed through verbatim as an array of flat objects (up to 500). Never invent, edit, or round the rows.\n- chartType: an exact Flint chart type name. The full set is: Line Chart, Area Chart, Range Area Chart, Streamgraph, Bar Chart, Grouped Bar Chart, Stacked Bar Chart, Waterfall Chart, Lollipop Chart, Pyramid Chart, Bullet Chart, Ranged Dot Plot, Slope Chart, Bump Chart, Scatter Plot, Connected Scatter Plot, Regression, Strip Plot, Boxplot, Histogram, Density Plot, ECDF Plot, Heatmap, Calendar Heatmap, Radar Chart, Rose Chart, Pie Chart, Funnel Chart, Gauge Chart, Sunburst Chart, Treemap, Tree, Sankey Diagram, Network Graph, Parallel Coordinates, Gantt Chart, Candlestick Chart. These names are case-sensitive and an unrecognized name fails the call outright, so copy them exactly. There is no \"Donut Chart\": the part-to-whole types are Pie Chart, Rose Chart, Sunburst Chart, Treemap, and Funnel Chart.\n- encodings: map visual channels to exact result field names as plain strings, for example {\"x\": \"category_field\", \"y\": \"value_field\", \"color\": \"series_field\"}. Field names must match the row keys exactly; do not add extra quotes inside the strings.\n- semanticTypes: map every encoded field to a Flint semantic type. Time: Date, Week, Month, Quarter, Year, YearMonth (for YYYY-MM text), Duration. Measures: Quantity, Count, Amount, Price, Percentage, PercentageChange, Profit, Score, Rank, Range, Number. Labels: Category, Name, Status, Region, ID. Picking the right one drives axis and tooltip formatting, so use Price or Amount for currency and Rank for rankings rather than a generic Quantity.\n\nChart choice: pick the most expressive form the data will support, not the most obvious one. A four-bar bar chart is a wasted answer when the same question could carry a trend, a ranking, a distribution, or a composition. Before you settle on bars, ask whether you could return more rows — another dimension or more periods — and say something richer. Match the question shape:\n- Actual versus target or versus a threshold, per entity: Bullet Chart, encoding the target on the goal channel. For a long-format actual/target pair use a Ranged Dot Plot. Prefer both over a two-series Grouped Bar Chart.\n- One metric over time for several entities: Line Chart with color for the entity. When the entities' levels are too far apart to share one axis, add column for small multiples instead of dropping series.\n- Who gained and who lost ground between two periods: Slope Chart, with x as the period, y as the value, and color as the entity.\n- How a ranking churned across many periods: Bump Chart, with y as the rank and color as the entity, and Rank as y's semantic type.\n- Contributions that build to a total, or a variance decomposition: Waterfall Chart.\n- Composition shifting over time: Streamgraph for a continuous feel, Stacked Bar Chart for discrete periods.\n- Two-dimensional intensity: Heatmap for entity by period. For a single long daily series, Calendar Heatmap with x as the date and color as the value.\n- Spread and outliers rather than an average: Boxplot, Strip Plot, or Histogram, passing the unaggregated rows so the distribution is real.\n- Several normalized metrics compared across a few entities: Radar Chart, with x as the metric, y as the score, and color as the entity.\n- A nested part-to-whole: Treemap or Sunburst Chart, using the size, color, and detail channels.\n- Activity spans that have a start and an end: Gantt Chart, with y as the entity, x as the start, and x2 as the end.\n- A relationship with a fitted trend: Regression; plain Scatter Plot when no fit is wanted.\nChannels beyond x, y, and color are available and worth using: goal, x2, group, size, detail, order, opacity, and the column and row faceting channels. Faceting with column turns one crowded chart into small multiples and is often the difference between a readable answer and a tangle.\nIf a breakdown collapses to a single series because row-level security scopes you to one site or entity, do not ship a one-bar chart: re-cut the same question by another dimension you can see (job, customer, material, severity) or by time, so the answer still has structure. Shape rows in SQL to fit the chart: long format (one row per entity per measure, via UNION ALL) for anything where color or group encodes the measure. Keep plotted results chart-sized: aggregate in SQL first and pass at most 500 rows.\n\nAfter the chart, still write the concise interpretation: the answer first, the key numbers, the recommended priority, your definitions, and the SQL appendix.\n\n## ACTING ON RESULTS\n- Use send_email to notify stakeholders. When the user asks you to message the people responsible for something, look up their contact details in the database, write an individualized summary of their issue, and send one email per person. When a chart would help the recipient, render it with insforge_render_chart and embed the returned url as an image in the email body. Email sending is approval-gated: present what you are about to send and let the user approve it.\n- Use set_reminder when the user asks you to check back later or watch for a repeat (for example \"alert me if tomorrow slips again\"): schedule a reminder whose message describes exactly what to re-check, the threshold, and who to alert. When the reminder fires, re-run the queries, compare, and email only if the condition happened.\n- Persist a snapshot when you finish a significant analysis: upsert a record of type \"analysis_snapshot\" whose name combines the topic with a per-run identifier, the timestamp to the second plus a short random suffix (for example \"behind-target-2026-07-18-143059-k4\"), with the key metrics and timestamp in the record body. Snapshot names must be unique per run, so no repeat of an analysis can ever overwrite an earlier snapshot: when a reminder depends on one, write that exact record name into the reminder message, and when you later need a baseline, list records of the type and pick the right one. The record type \"monitor_snapshot\" and its name \"daily-monitor-latest\" belong to the scheduled monitor's baseline; never write to them.\n\n## RULES\n- SQL is read-only: SELECT (and WITH ... SELECT) statements only. Never run INSERT, UPDATE, DELETE, ALTER, DROP, CREATE, TRUNCATE, GRANT, or any other write or DDL statement, even if asked.\n- Never invent data. If a query returns nothing, say so and show the query.\n- Keep the first answer fast: start with the two or three queries that answer the question, not an exhaustive audit.\n- State definitions explicitly rather than silently choosing them.",
+            "artifacts": {
+              "enabled": true,
+              "types": [
+                "markdown",
+                "component"
+              ]
+            },
+            "tools": {
+              "toolIds": [
+                "builtin:send_email",
+                "builtin:set_reminder",
+                "builtin:get_current_time",
+                "builtin:runtype_record_upsert",
+                "builtin:runtype_record_get",
+                "builtin:runtype_record_list"
+              ],
+              "runtimeTools": [
+                {
+                  "name": "insforge_list_tables",
+                  "description": "List every table in the connected InsForge Postgres database. Call this first to discover what data exists.",
+                  "toolType": "external",
+                  "parametersSchema": {
+                    "type": "object",
+                    "properties": {}
+                  },
+                  "config": {
+                    "url": "{{insforgeBaseUrl}}/api/database/tables",
+                    "method": "GET",
+                    "headers": {
+                      "Authorization": "Bearer {{secret:INSFORGE_API_KEY}}"
+                    }
+                  }
+                },
+                {
+                  "name": "insforge_run_sql",
+                  "description": "Execute a single read-only SQL statement against the connected InsForge Postgres database and return the rows as JSON. Use it for schema introspection (query information_schema.columns) and for analytics SELECT queries. Never send write or DDL statements.",
+                  "toolType": "external",
+                  "parametersSchema": {
+                    "type": "object",
+                    "properties": {
+                      "query": {
+                        "type": "string",
+                        "description": "One SQL SELECT (or WITH ... SELECT) statement. Inline all literal values; do not use parameter placeholders."
+                      }
+                    },
+                    "required": [
+                      "query"
+                    ]
+                  },
+                  "config": {
+                    "url": "{{insforgeBaseUrl}}/api/database/advance/rawsql/unrestricted",
+                    "method": "POST",
+                    "headers": {
+                      "Authorization": "Bearer {{secret:INSFORGE_API_KEY}}",
+                      "Content-Type": "application/json"
+                    }
+                  }
+                },
+                {
+                  "name": "insforge_render_chart",
+                  "description": "Render a chart as a hosted PNG image from SQL result rows, using the Flint visualization language. Returns an id and a url; the url serves the PNG. Use it for email embeds and for surfaces without interactive charts. Requires the companion flint-render function on the InsForge project; if the call fails, continue without a chart image.",
+                  "toolType": "external",
+                  "parametersSchema": {
+                    "type": "object",
+                    "properties": {
+                      "title": {
+                        "type": "string",
+                        "description": "Concise chart title."
+                      },
+                      "chartType": {
+                        "type": "string",
+                        "description": "An exact Flint chart type name (case-sensitive; an unrecognized name fails the call). One of: Line Chart, Area Chart, Range Area Chart, Streamgraph, Bar Chart, Grouped Bar Chart, Stacked Bar Chart, Waterfall Chart, Lollipop Chart, Pyramid Chart, Bullet Chart, Ranged Dot Plot, Slope Chart, Bump Chart, Scatter Plot, Connected Scatter Plot, Regression, Strip Plot, Boxplot, Histogram, Density Plot, ECDF Plot, Heatmap, Calendar Heatmap, Radar Chart, Rose Chart, Pie Chart, Funnel Chart, Gauge Chart, Sunburst Chart, Treemap, Tree, Sankey Diagram, Network Graph, Parallel Coordinates, Gantt Chart, Candlestick Chart. There is no \"Donut Chart\" — use Pie Chart."
+                      },
+                      "encodings": {
+                        "type": "object",
+                        "description": "Map of Flint visual channels (x, y, color, size) to result field names.",
+                        "additionalProperties": {
+                          "type": "string"
+                        }
+                      },
+                      "semanticTypes": {
+                        "type": "object",
+                        "description": "Map of every encoded field to a Flint semantic type. Time: Date, Week, Month, Quarter, Year, YearMonth, Duration. Measures: Quantity, Count, Amount, Price, Percentage, PercentageChange, Profit, Score, Rank, Range, Number. Labels: Category, Name, Status, Region, ID.",
+                        "additionalProperties": {
+                          "type": "string"
+                        }
+                      },
+                      "rows": {
+                        "type": "array",
+                        "description": "Chart-ready result rows from insforge_run_sql, passed through verbatim as flat objects (up to 500).",
+                        "items": {
+                          "type": "object"
+                        }
+                      }
+                    },
+                    "required": [
+                      "title",
+                      "chartType",
+                      "encodings",
+                      "semanticTypes",
+                      "rows"
+                    ]
+                  },
+                  "config": {
+                    "url": "{{insforgeBaseUrl}}/functions/flint-render",
+                    "method": "POST",
+                    "headers": {
+                      "Authorization": "Bearer {{secret:INSFORGE_API_KEY}}",
+                      "Content-Type": "application/json"
+                    }
+                  }
+                }
+              ],
+              "approval": {
+                "require": [
+                  "send_email"
+                ]
+              },
+              "maxToolCalls": 30
+            }
+          }
+        }
+      },
+      {
+        "id": "daily-monitor-capability",
+        "name": "Daily Business Monitor",
+        "description": "Scheduled headless monitor that re-runs the monitoring checks against InsForge, compares against the previous snapshot record, and emails an alert only when something is flagged.",
+        "agent": {
+          "name": "Business Monitor",
+          "description": "Headless scheduled monitor over the InsForge database with snapshot comparison and threshold-based email alerts.",
+          "config": {
+            "model": "{{monitorModel}}",
+            "systemPrompt": "You are the scheduled monitor for {{productName}}, an operational intelligence product connected to a live InsForge Postgres database. You run headlessly on a schedule: no one is chatting with you, so never ask questions. Do the pass end to end and finish.\n\n## MONITORING INSTRUCTIONS\n<monitoring_instructions>\n{{monitorInstructions}}\n</monitoring_instructions>\n\n## HOW A PASS WORKS\n1. Discover the schema you need: insforge_list_tables, then information_schema.columns via insforge_run_sql. Never guess table or column names.\n2. Run read-only SELECT queries that evaluate the monitoring instructions.\n3. Fetch the previous snapshot: get the record of type \"monitor_snapshot\" named \"daily-monitor-latest\". If it does not exist, treat this pass as the baseline.\n4. Compare current metrics against the snapshot to detect new problems and repeats.\n5. Save the new snapshot: upsert record type \"monitor_snapshot\" name \"daily-monitor-latest\" with today's metrics, flagged items, and the pass timestamp.\n6. Alert only when warranted: if anything is flagged, or a previously flagged item slipped again, send ONE email to {{alertEmail}} with a concise, specific summary: which site, which metric, the gap, the trend versus the last pass, and the recommended action. When a chart clarifies the alert, render it with insforge_render_chart and embed the returned url as an image in the email body; if that call fails, send the email without it. If nothing is flagged, do not send any email.\n\n## RULES\n- SELECT-only SQL. Never write to the database.\n- Keep the email short and specific; numbers over adjectives.\n- Your final text output is a one-paragraph pass summary for the execution log; it is not sent to anyone.",
+            "tools": {
+              "toolIds": [
+                "builtin:send_email",
+                "builtin:get_current_time",
+                "builtin:runtype_record_upsert",
+                "builtin:runtype_record_get"
+              ],
+              "runtimeTools": [
+                {
+                  "name": "insforge_list_tables",
+                  "description": "List every table in the connected InsForge Postgres database. Call this first to discover what data exists.",
+                  "toolType": "external",
+                  "parametersSchema": {
+                    "type": "object",
+                    "properties": {}
+                  },
+                  "config": {
+                    "url": "{{insforgeBaseUrl}}/api/database/tables",
+                    "method": "GET",
+                    "headers": {
+                      "Authorization": "Bearer {{secret:INSFORGE_API_KEY}}"
+                    }
+                  }
+                },
+                {
+                  "name": "insforge_run_sql",
+                  "description": "Execute a single read-only SQL statement against the connected InsForge Postgres database and return the rows as JSON. Use it for schema introspection (query information_schema.columns) and for analytics SELECT queries. Never send write or DDL statements.",
+                  "toolType": "external",
+                  "parametersSchema": {
+                    "type": "object",
+                    "properties": {
+                      "query": {
+                        "type": "string",
+                        "description": "One SQL SELECT (or WITH ... SELECT) statement. Inline all literal values; do not use parameter placeholders."
+                      }
+                    },
+                    "required": [
+                      "query"
+                    ]
+                  },
+                  "config": {
+                    "url": "{{insforgeBaseUrl}}/api/database/advance/rawsql/unrestricted",
+                    "method": "POST",
+                    "headers": {
+                      "Authorization": "Bearer {{secret:INSFORGE_API_KEY}}",
+                      "Content-Type": "application/json"
+                    }
+                  }
+                },
+                {
+                  "name": "insforge_render_chart",
+                  "description": "Render a chart as a hosted PNG image from SQL result rows, using the Flint visualization language. Returns an id and a url; the url serves the PNG. Use it for email embeds and for surfaces without interactive charts. Requires the companion flint-render function on the InsForge project; if the call fails, continue without a chart image.",
+                  "toolType": "external",
+                  "parametersSchema": {
+                    "type": "object",
+                    "properties": {
+                      "title": {
+                        "type": "string",
+                        "description": "Concise chart title."
+                      },
+                      "chartType": {
+                        "type": "string",
+                        "description": "An exact Flint chart type name (case-sensitive; an unrecognized name fails the call). One of: Line Chart, Area Chart, Range Area Chart, Streamgraph, Bar Chart, Grouped Bar Chart, Stacked Bar Chart, Waterfall Chart, Lollipop Chart, Pyramid Chart, Bullet Chart, Ranged Dot Plot, Slope Chart, Bump Chart, Scatter Plot, Connected Scatter Plot, Regression, Strip Plot, Boxplot, Histogram, Density Plot, ECDF Plot, Heatmap, Calendar Heatmap, Radar Chart, Rose Chart, Pie Chart, Funnel Chart, Gauge Chart, Sunburst Chart, Treemap, Tree, Sankey Diagram, Network Graph, Parallel Coordinates, Gantt Chart, Candlestick Chart. There is no \"Donut Chart\" — use Pie Chart."
+                      },
+                      "encodings": {
+                        "type": "object",
+                        "description": "Map of Flint visual channels (x, y, color, size) to result field names.",
+                        "additionalProperties": {
+                          "type": "string"
+                        }
+                      },
+                      "semanticTypes": {
+                        "type": "object",
+                        "description": "Map of every encoded field to a Flint semantic type. Time: Date, Week, Month, Quarter, Year, YearMonth, Duration. Measures: Quantity, Count, Amount, Price, Percentage, PercentageChange, Profit, Score, Rank, Range, Number. Labels: Category, Name, Status, Region, ID.",
+                        "additionalProperties": {
+                          "type": "string"
+                        }
+                      },
+                      "rows": {
+                        "type": "array",
+                        "description": "Chart-ready result rows from insforge_run_sql, passed through verbatim as flat objects (up to 500).",
+                        "items": {
+                          "type": "object"
+                        }
+                      }
+                    },
+                    "required": [
+                      "title",
+                      "chartType",
+                      "encodings",
+                      "semanticTypes",
+                      "rows"
+                    ]
+                  },
+                  "config": {
+                    "url": "{{insforgeBaseUrl}}/functions/flint-render",
+                    "method": "POST",
+                    "headers": {
+                      "Authorization": "Bearer {{secret:INSFORGE_API_KEY}}",
+                      "Content-Type": "application/json"
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        }
+      }
+    ],
+    "tools": [
+      {
+        "id": "insforge-database",
+        "type": "custom",
+        "provider": "insforge",
+        "name": "InsForge Postgres",
+        "config": {
+          "baseUrl": "{{insforgeBaseUrl}}",
+          "authorizationHeader": "Bearer {{secret:INSFORGE_API_KEY}}",
+          "description": "Live InsForge Postgres backend. The analyst and monitor agents reach it through inline HTTP tools (list tables, run read-only SQL, render chart images) authenticated with the INSFORGE_API_KEY secret."
+        },
+        "auth": {
+          "type": "api_key",
+          "setupRequired": true,
+          "secrets": [
+            {
+              "key": "INSFORGE_API_KEY",
+              "required": true,
+              "description": "InsForge project API key, sent as the Bearer token on database REST calls. Use a read-only or least-privilege key; agent SQL is prompt-constrained to SELECT, and the key's permissions are the hard enforcement boundary.",
+              "placeholder": "ik_..."
+            }
+          ],
+          "setupInstructions": {
+            "summary": "Connect your InsForge project so the agents can query your database.",
+            "steps": [
+              "Open your InsForge project dashboard and create or copy an API key. Prefer a read-only or least-privilege key; the agents are instructed to run SELECT-only SQL, but the key's permissions are what actually enforce that.",
+              "After import, fill INSFORGE_API_KEY in the Runtype secret intake screen.",
+              "Set the InsForge base URL template variable to your project URL (https://<your-app>.insforge.app).",
+              "Optional: deploy the open-source companion pieces (the flint-render chart-image function, the embeddable analyst web app, and a sample dataset) from https://github.com/runtypelabs/ai-data-visualization to your InsForge project. The insforge_render_chart tool starts working as soon as flint-render is deployed; until then the agents simply answer without chart images."
+            ],
+            "docsUrl": "https://docs.insforge.dev"
+          }
+        }
+      }
+    ],
+    "surfaces": [
+      {
+        "id": "ask-chat-surface",
+        "name": "AI Data Visualization Chat",
+        "type": "chat",
+        "config": {},
+        "routes": [
+          {
+            "capabilityId": "ask-analyst-capability"
+          }
+        ]
+      },
+      {
+        "id": "ask-api-surface",
+        "name": "AI Data Visualization API",
+        "type": "api",
+        "config": {},
+        "routes": [
+          {
+            "capabilityId": "ask-analyst-capability"
+          }
+        ]
+      },
+      {
+        "id": "ask-email-surface",
+        "name": "AI Data Visualization Email",
+        "type": "email",
+        "config": {},
+        "routes": [
+          {
+            "capabilityId": "ask-analyst-capability"
+          }
+        ]
+      },
+      {
+        "id": "ask-slack-surface",
+        "name": "AI Data Visualization Slack",
+        "type": "slack",
+        "config": {},
+        "routes": [
+          {
+            "capabilityId": "ask-analyst-capability"
+          }
+        ]
+      }
+    ],
+    "schedules": [
+      {
+        "id": "daily-monitor-schedule",
+        "name": "Daily monitoring pass",
+        "capabilityId": "daily-monitor-capability",
+        "triggerType": "cron",
+        "cron": "{{monitorCron}}",
+        "timezone": "{{monitorTimezone}}",
+        "messages": [
+          {
+            "role": "user",
+            "content": "Run the scheduled monitoring pass now, following your monitoring instructions. Compare against the previous snapshot, save a new one, and email an alert only if something is flagged."
+          }
+        ],
+        "enabled": true
+      }
+    ],
+    "evals": [
+      {
+        "id": "analyst-grounding-eval",
+        "name": "Analyst Grounding",
+        "description": "Pins that analytical answers are grounded in live SQL against the connected database, cite their sources, and never send unrequested email.",
+        "capabilityId": "ask-analyst-capability",
+        "graders": [
+          {
+            "kind": "no_error"
+          },
+          {
+            "kind": "not_called_tool",
+            "name": "send_email"
+          },
+          {
+            "kind": "called_tool",
+            "name": "insforge_run_sql",
+            "severity": "soft"
+          },
+          {
+            "kind": "ai",
+            "criteria": "The answer is grounded in tool calls against the connected database rather than invented numbers. For analytical questions it names the specific underperforming entities, quantifies the gap against target, states which tables the answer came from, includes the SQL used, and ends with a clear prioritized recommendation. For capability questions it accurately describes the connected data without fabricating tables.",
+            "threshold": 3.5
+          }
+        ],
+        "cases": [
+          {
+            "name": "Behind-target priority question",
+            "input": {
+              "messages": [
+                {
+                  "role": "user",
+                  "content": "Which sites are behind production targets this week, why, and what needs attention first?"
+                }
+              ]
+            }
+          },
+          {
+            "name": "Data discovery question",
+            "input": {
+              "messages": [
+                {
+                  "role": "user",
+                  "content": "What data do you have access to, and what kinds of questions can I ask?"
+                }
+              ]
+            }
+          }
+        ]
+      }
+    ],
+    "_meta": {
+      "schemaVersion": "1.0.0",
+      "catalogVersion": "2026-07-22",
+      "generatedAt": "2026-07-22T00:00:00.000Z",
+      "generatorVersion": "1.0.0",
+      "planHash": "ai-data-visualization-fpo-hash"
+    }
+  },
+  "template": {
+    "variables": [
+      {
+        "key": "productName",
+        "label": "Product name",
+        "description": "Name of the product shown in the dashboard and in the agents' own framing.",
+        "inputType": "text",
+        "required": true,
+        "defaultValue": "AI Data Visualization",
+        "placeholder": "AI Data Visualization"
+      },
+      {
+        "key": "insforgeBaseUrl",
+        "label": "InsForge base URL",
+        "description": "Your InsForge project's base URL (hosted or self-hosted). Every database call the agents make goes to this host, and the INSFORGE_API_KEY bearer token is sent only here, so it must be a host you control.",
+        "inputType": "url",
+        "required": true,
+        "defaultValue": "https://your-project.insforge.app",
+        "placeholder": "https://your-app.insforge.app"
+      },
+      {
+        "key": "businessContext",
+        "label": "Business context",
+        "description": "Describe your business and what the database tracks, including how terms like \"behind target\" should be interpreted. This is the only thing the analyst knows about your company before it inspects the schema.",
+        "inputType": "textarea",
+        "required": true,
+        "defaultValue": "Industrial operations company running drilling and blasting jobs across multiple quarry and mining sites. The InsForge database tracks sites, site managers, jobs, weekly production targets, actual production, materials consumption, safety events, and per-job costs and margins. \"Behind target\" is judged against pace, not the full weekly figure: for a partial week, compare cumulative actuals against the pro-rata share of the weekly target (target_tons times days elapsed divided by 7). Margin impact is estimated as the production shortfall times the average margin per unit for that site.",
+        "placeholder": "Describe your business, what the database tracks, and how key terms should be interpreted..."
+      },
+      {
+        "key": "monitorInstructions",
+        "label": "Monitoring instructions",
+        "description": "What the scheduled monitor checks on every pass and what counts as a problem worth alerting on.",
+        "inputType": "textarea",
+        "required": true,
+        "defaultValue": "Compare each site's cumulative actual production for the current week against the pro-rata share of its weekly target for the days elapsed so far (target_tons times days elapsed divided by 7). Flag any site more than 10% behind that pace, any site whose gap widened since the previous snapshot, and any open safety event. Estimate margin impact for each flagged site.",
+        "placeholder": "What should the monitor check, and what counts as a problem worth alerting on?"
+      },
+      {
+        "key": "alertEmail",
+        "label": "Alert email address",
+        "description": "Where the scheduled monitor sends alerts when something is flagged. Use a shared inbox so your team sees them.",
+        "inputType": "text",
+        "required": true,
+        "defaultValue": "ops@your-company.com",
+        "placeholder": "you@company.com"
+      },
+      {
+        "key": "analystModel",
+        "label": "Analyst model",
+        "description": "Model used by the conversational analyst. A stronger model writes better SQL and clearer explanations.",
+        "inputType": "select",
+        "required": true,
+        "defaultValue": "claude-sonnet-4-6",
+        "placeholder": "Select a model",
+        "options": [
+          {
+            "label": "Claude Sonnet 4.6 (recommended)",
+            "value": "claude-sonnet-4-6"
+          },
+          {
+            "label": "Claude Opus 4.8 (deepest analysis)",
+            "value": "claude-opus-4-8"
+          },
+          {
+            "label": "GPT-5 (balanced)",
+            "value": "gpt-5"
+          }
+        ]
+      },
+      {
+        "key": "monitorModel",
+        "label": "Monitor model",
+        "description": "Model used by the scheduled monitor. Pick a fast, cheap model; this runs every day.",
+        "inputType": "select",
+        "required": true,
+        "defaultValue": "claude-haiku-4-5",
+        "placeholder": "Select a model",
+        "options": [
+          {
+            "label": "Claude Haiku 4.5 (recommended)",
+            "value": "claude-haiku-4-5"
+          },
+          {
+            "label": "GPT-5 Mini (balanced)",
+            "value": "gpt-5-mini"
+          },
+          {
+            "label": "Claude Sonnet 4.6 (strongest)",
+            "value": "claude-sonnet-4-6"
+          }
+        ]
+      },
+      {
+        "key": "monitorCron",
+        "label": "Monitor schedule (cron)",
+        "description": "When the monitoring pass runs, as a cron expression. The default runs once a day at 7:00.",
+        "inputType": "text",
+        "required": true,
+        "defaultValue": "0 7 * * *",
+        "placeholder": "0 7 * * *"
+      },
+      {
+        "key": "monitorTimezone",
+        "label": "Monitor timezone",
+        "description": "IANA timezone the cron expression is evaluated in.",
+        "inputType": "text",
+        "required": true,
+        "defaultValue": "America/Los_Angeles",
+        "placeholder": "America/Los_Angeles"
+      }
+    ]
+  }
+}
