@@ -852,6 +852,7 @@ html, body { margin: 0; height: 100%; overflow: hidden; }
 
 /* ── Sign-in card + signed-in user chip ──────────────────── */
 .ayb-signin {
+  align-self: flex-start;
   max-width: 420px;
   margin: 12vh auto 0;
   padding: 28px 30px;
