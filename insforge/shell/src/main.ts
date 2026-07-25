@@ -1514,7 +1514,7 @@ const renderSignInCard = (mount: HTMLElement, auth: AybAuth): void => {
     createTextElement(
       "p",
       "ayb-signin-copy",
-      "Each account sees only the sites it is entitled to. Your login is verified by Runtype and your SQL runs under your own database session, so the isolation is enforced, not promised.",
+      "Each account sees only the sites it is entitled to. InsForge verifies your login and enforces row-level access for SQL. Runtype verifies a short-lived identity proof before running the analyst as you.",
     ),
   );
 
