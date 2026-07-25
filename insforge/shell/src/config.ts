@@ -24,7 +24,7 @@ export const API_URL = PAGE_CONFIG.apiUrl ?? "https://api.runtype.com";
 export const CLIENT_TOKEN = PAGE_CONFIG.clientToken ?? "";
 export const INSFORGE_BASE = PAGE_CONFIG.insforgeBaseUrl ?? "";
 export const INSFORGE_ANON_KEY = PAGE_CONFIG.insforgeAnonKey ?? "";
-export const PRODUCT_NAME = PAGE_CONFIG.productName ?? "Generative Dashboard Template";
+export const PRODUCT_NAME = PAGE_CONFIG.productName ?? "AI Data Visualization";
 export const IS_SAMPLE_DATASET = PAGE_CONFIG.sampleDataset !== false;
 export const DEMO_ACCOUNTS = PAGE_CONFIG.demoAccounts ?? [];
 
