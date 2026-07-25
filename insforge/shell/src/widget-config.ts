@@ -101,6 +101,7 @@ export const buildConfig = (auth: AybAuth | null, authEnabled: boolean): AgentWi
   ],
   features: {
     ...DEFAULT_WIDGET_CONFIG.features,
+    scrollBehavior: { mode: "follow" },
     showReasoning: false,
     showToolCalls: true,
     suggestReplies: { expose: true },
