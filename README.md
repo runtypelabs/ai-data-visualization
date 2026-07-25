@@ -1,26 +1,24 @@
-# AI Data Visualization
+# AI Data Visualization Starter
 
-AI data analyst built with [Runtype](https://runtype.com) 
+### An AI data analyst powered by [Runtype](https://runtype.com), deployed to [InsForge](https://insforge.dev), with generative charts via [Flint](https://microsoft.github.io/flint-chart/#/).
 
-Input: 
+![The AI Data Visualization analyst answering "What's behind target this week?" with a generated pace-variance dashboard and auditable SQL](./assets/demo-screenshot.png)
 
-- A Postgres database with business data
+**You bring:**
+
+- A Postgres database with business data (sample data included)
 - A question about the data
 
-Outputs: 
-- A relevant dashboard, table and SQL (generative UI via [Flint](https://microsoft.github.io/flint-chart/#/)) 
+**You get:**
+- A relevant dashboard, table and SQL (generates charts using Flint, Microsoft's AI charting library) 
 - Scheduled reports to track that data over time, via email
 
-Works on:
-- Web (streamed, generative UI via [Persona](https://www.persona-chat.dev/))
+**It works across:**
+- Web (using [persona.js](https://www.persona-chat.dev/), Runtype's agent UI library)
 - Email
 - Slack
 
-Uses [Insforge](https://insforge.dev/) for app, database, and auth hosting, including a full multi-tenant agent architecture with user accounts and differing permission levels for the data which the agent respects.
-
-The agent can answer questions with generative UI using Microsoft's [Flint](https://microsoft.github.io/flint-chart/#/). In the web UI, the results are streamed in using [Persona](https://www.persona-chat.dev/). When used in a different surface such as email, charts are generated as images and included inline in the email report by the agent. Scheduled reports are also included.
-
-![The AI Data Visualization analyst answering "What's behind target this week?" with a generated pace-variance dashboard and auditable SQL](./assets/demo-screenshot.png)
+Access to the web is gated behind auth, so only users you want have access to query data.
 
 ## Start here: Runtype configuration
 
