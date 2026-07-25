@@ -11,12 +11,12 @@
 
 **You get:**
 - A relevant dashboard, table and SQL (generates charts using Flint, Microsoft's AI charting library) 
-- Scheduled reports to track that data over time, via email
+- Scheduled monitoring that re-checks the same data over time and flags what slipped
 
 **It works across:**
 - Web (using [persona.js](https://www.persona-chat.dev/), Runtype's agent UI library)
-- Email
 - Slack
+- API
 
 Access to the web is gated behind auth, so only users you want have access to query data.
 
@@ -27,8 +27,7 @@ The entire product is composed in one file: [**`runtype.config.json`**](./runtyp
 It defines:
 
 - **Two agents** — the conversational **Business Analyst** and the **Daily Business Monitor**
-- **Product surfaces** — the chat surface (with WebMCP interactive charts), an API surface, an email surface (mail the analyst, get a report with chart images back), and a Slack surface
-- **Email actions** — approval-gated `send_email` with recipients looked up from your own data
+- **Product surfaces** — the chat surface (with WebMCP interactive charts), a Slack surface (same agent, chart images inline), and an API surface
 - **Scheduling** — the monitor's cron schedule and timezone
 - **Integrations and wiring** — the InsForge Postgres tools, chart rendering, per-user records, and an analyst-grounding eval suite
 
@@ -42,7 +41,7 @@ npx @runtypelabs/cli validate-product runtype.config.json
 open "https://use.runtype.com/now?templateUrl=https://raw.githubusercontent.com/runtypelabs/ai-data-visualization/main/runtype.config.json"
 ```
 
-The importer prompts for the template variables (product name, your InsForge base URL, business context, monitor schedule, alert email) and the one pending secret, `INSFORGE_API_KEY`. The same URL works with Runtype's MCP tooling (`create_product_from_example` with a `url`).
+The importer prompts for the template variables (product name, your InsForge base URL, business context, monitor schedule) and the one pending secret, `INSFORGE_API_KEY`. The same URL works with Runtype's MCP tooling (`create_product_from_example` with a `url`).
 
 The runnable app implementation lives in [`./insforge`](./insforge) — it's the supporting half that serves the web app and hosts the data.
 
@@ -52,15 +51,15 @@ The runnable app implementation lives in [`./insforge`](./insforge) — it's the
 flowchart LR
   Config[runtype.config.json] --> Analyst[Business Analyst agent]
   Config --> Monitor[Scheduled daily monitor]
-  Config --> Email[Approval-gated email actions]
   Config --> Chat[Chat surface + WebMCP charts]
+  Config --> Slack[Slack surface + chart images]
   Config --> API[API surface]
-  Config --> EmailSurface[Email surface]
-  Config --> Slack[Slack surface]
   App[insforge/ app] --> Chat
   Analyst --> DB[(InsForge Postgres)]
+  Analyst --> Chat
+  Analyst --> Slack
   Monitor --> DB
-  Monitor --> Email
+  Monitor --> Records[(Snapshot + alert records)]
 ```
 
 Runtype supplies the intelligence: schema discovery, inspectable text-to-SQL, generated dashboards, actions, monitoring. [InsForge](https://insforge.dev) supplies the backend — Postgres, auth, edge functions serving the web app. Point the template at a different database and the same config becomes an analyst for whatever your data tracks: the agents discover your schema live, nothing is hard-coded.
@@ -74,7 +73,7 @@ Runtype supplies the intelligence: schema discovery, inspectable text-to-SQL, ge
 ```bash
 export INSFORGE_BASE_URL=https://<your-app>.insforge.app INSFORGE_ADMIN_KEY=<key>
 node scripts/seed-sample-data.mjs        # optional sample dataset (skip for your own data)
-node scripts/deploy-flint-render.mjs     # chart-image renderer for email/scheduled surfaces
+node scripts/deploy-flint-render.mjs     # chart-image renderer for Slack/scheduled surfaces
 RUNTYPE_CLIENT_TOKEN=ct_live_... INSFORGE_ANON_KEY=anon_... node scripts/deploy-shell.mjs
 ```
 

@@ -5,7 +5,7 @@ The supporting app half of [AI Data Visualization](../README.md). The product it
 | Piece | What it is |
 | --- | --- |
 | `shell/` | The analyst web app: a [Persona](https://github.com/runtypelabs/persona) fullscreen assistant with interactive [Flint](https://www.npmjs.com/package/flint-chart) chart artifacts, served as an InsForge edge function. One prebuilt, secret-free bundle (`shell/dist/index.html`); per-project config is injected at deploy time. |
-| `functions/flint-render.mjs` | An edge function that renders Flint chart specs to hosted PNG images (ECharts SSR + resvg). This is how emailed reports and monitoring alerts carry real charts on surfaces that can't run the interactive widget. |
+| `functions/flint-render.mjs` | An edge function that renders Flint chart specs to hosted PNG images (ECharts SSR + resvg). This is how Slack replies and scheduled runs carry real charts on surfaces that can't run the interactive widget. |
 | `functions/ayb-identity.mjs` | The identity token bridge: verifies a native InsForge user JWT (RS256, project JWKS) and re-mints a short-lived ES256 JWT with pinned `iss`/`aud` that Runtype's Identity Exchange can verify. Serves its own JWKS at `?jwks=1`. |
 | `migrations/` | The sample dataset schema. |
 | `../scripts/seed-sample-data.mjs` | Idempotent seeder for the fictional industrial-operations sample dataset (8 tables) the demo runs on. Skip it to point the agents at your own data. |
@@ -25,9 +25,9 @@ you ──▶ https://<your-app>.insforge.app/functions/ai-data-visualization   
              │   insforge_run_sql (page tool) ──▶ run_analyst_sql RPC with YOUR JWT
              │                                    └─ Postgres RLS scopes rows per user
              │   create_flint_chart  ──▶ interactive chart in the page (WebMCP)
-             │   insforge_render_chart ──▶ /functions/flint-render ──▶ PNG for email
+             │   insforge_render_chart ──▶ /functions/flint-render ──▶ PNG for Slack
              ▼
-        send_email / set_reminder / per-user analysis snapshots    (runtype.config.json)
+        set_reminder / per-user analysis snapshots / Slack replies  (runtype.config.json)
 ```
 
 InsForge serves the app and owns the data **and the users**; Runtype is the intelligence that respects those boundaries. Three layers make the multi-tenancy honest rather than prompt-promised:

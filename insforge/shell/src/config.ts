@@ -33,10 +33,10 @@ export const DEMO_ACCOUNTS = PAGE_CONFIG.demoAccounts ?? [];
 // per site — and to make an expressive Flint chart the natural fit rather than a
 // four-bar bar chart. In order these lean toward a multi-series line or bump
 // chart, a bullet chart against pace, a waterfall of margin variance, and the
-// email/reminder workflow.
+// per-owner briefing plus follow-up watch.
 export const STARTER_PROMPTS = PAGE_CONFIG.starterPrompts ?? [
   "How has each site tracked against target over the last 12 weeks — who's gaining and who's slipping?",
   "Which sites are behind pace right now, and how did they get there day by day?",
   "Where are we losing margin, and which sites and jobs account for the gap?",
-  "Email each site owner their biggest issue, and alert me if it gets worse.",
+  "Brief each site owner on their biggest issue, and watch for it getting worse.",
 ];

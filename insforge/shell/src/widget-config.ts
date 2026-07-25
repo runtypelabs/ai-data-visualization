@@ -59,10 +59,10 @@ export const buildConfig = (auth: AybAuth | null, authEnabled: boolean): AgentWi
     visible: true,
     idleText: auth
       ? "SQL runs under your login. Postgres row-level security decides what you can see."
-      : "Answers are computed from live data. Emails are only sent with your approval.",
+      : "Answers are computed from live data, with the SQL shown on every chart.",
     connectedText: auth
       ? "SQL runs under your login. Postgres row-level security decides what you can see."
-      : "Answers are computed from live data. Emails are only sent with your approval.",
+      : "Answers are computed from live data, with the SQL shown on every chart.",
     connectingText: "Connecting…",
     errorText: "Connection error",
   },

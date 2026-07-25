@@ -47,7 +47,7 @@ const OnboardingRenderer: ComponentRenderer = () => {
     [
       "3",
       "Act on it",
-      "It can email the right people and schedule follow-up checks, so an answer becomes a workflow.",
+      "It briefs the right owners and schedules follow-up checks, so an answer becomes a workflow.",
     ],
   ];
   for (const [number, title, body] of stepDefinitions) {
