@@ -5,11 +5,14 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
+    "typecheck": "tsc --noEmit",
+    "check:performance": "node ../../scripts/check-performance-contract.mjs",
+    "check": "npm run typecheck && npm run check:performance && npm run build",
     "preview": "vite preview"
   },
   "dependencies": {
     "@mcp-b/webmcp-polyfill": "^3.0.0",
-    "@runtypelabs/persona": "4.11.0",
+    "@runtypelabs/persona": "4.11.1",
     "echarts": "^6.1.0",
     "flint-chart": "^0.2.1"
   },

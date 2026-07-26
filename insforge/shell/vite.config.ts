@@ -4,7 +4,9 @@ import { defineConfig, loadEnv } from "vite";
 import { viteSingleFile } from "vite-plugin-singlefile";
 
 export default defineConfig(({ command, mode }) => {
-  const env = loadEnv(mode, resolve(__dirname, ".."), "");
+  // The documented .env.local lives at the repository root, two levels above
+  // this shell directory.
+  const env = loadEnv(mode, resolve(__dirname, "../.."), "");
   const localRuntimeConfig = {
     apiUrl: env.RUNTYPE_API_URL || "https://api.runtype.com",
     clientToken: env.RUNTYPE_CLIENT_TOKEN || "",
@@ -12,6 +14,10 @@ export default defineConfig(({ command, mode }) => {
     ...(env.INSFORGE_ANON_KEY || env.NEXT_PUBLIC_INSFORGE_ANON_KEY
       ? { insforgeAnonKey: env.INSFORGE_ANON_KEY || env.NEXT_PUBLIC_INSFORGE_ANON_KEY }
       : {}),
+    ...(env.PRODUCT_NAME ? { productName: env.PRODUCT_NAME } : {}),
+    ...(env.SAMPLE_DATASET ? { sampleDataset: env.SAMPLE_DATASET !== "false" } : {}),
+    ...(env.DEMO_ACCOUNTS ? { demoAccounts: JSON.parse(env.DEMO_ACCOUNTS) } : {}),
+    ...(env.STARTER_PROMPTS ? { starterPrompts: JSON.parse(env.STARTER_PROMPTS) } : {}),
   };
 
   return {

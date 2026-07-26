@@ -24,8 +24,8 @@
 //   - Import the AI Data Visualization template and fill INSFORGE_API_KEY.
 //   - Create a client token bound to the chat surface (product_surface_id),
 //     with this function's origin in allowedOrigins.
-//   - Enable WebMCP on the chat surface for this origin with the
-//     create_flint_chart tool allowlisted.
+//   - Enable WebMCP on the chat surface for this origin with
+//     insforge_run_sql, insforge_query_and_chart, and create_flint_chart.
 import { readFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -102,5 +102,5 @@ const check = await fetch(`${BASE}/functions/${SLUG}`)
 console.log(`GET /functions/${SLUG} -> ${check.status} (${(await check.text()).length} bytes)`)
 console.log(`\nYour analyst is live at ${BASE}/functions/${SLUG}`)
 console.log(
-  'Reminder: the Runtype client token must allow this origin, and the chat surface needs WebMCP enabled for it (create_flint_chart).',
+  'Reminder: the Runtype client token must allow this origin, and the chat surface must allow the shell WebMCP tools (insforge_run_sql, insforge_query_and_chart, create_flint_chart).',
 )

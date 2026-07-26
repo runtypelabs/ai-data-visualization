@@ -8,25 +8,6 @@ export const setWidget = (handle: AgentWidgetInitHandle): void => {
   widget = handle;
 };
 
-/**
- * True while an assistant turn is in flight. The grouped activity checklist
- * momentarily reads "all complete" between two sequential tool calls; without
- * this check the terminal "Analysis ready" row flickers on and off once per
- * query on query-heavy turns. The handle exposes no lifecycle events, so
- * infer it from the message list: mid-turn the newest message is a tool call
- * or a streaming reply.
- */
-export const isTurnActive = (): boolean => {
-  const messages = (widget?.getMessages() ?? []) as Array<{
-    role?: string;
-    streaming?: boolean;
-    toolCall?: unknown;
-  }>;
-  const last = messages[messages.length - 1];
-  if (!last) return false;
-  return last.streaming === true || last.role === "user" || last.toolCall != null;
-};
-
 export const sendPrompt = (text: string): void => {
   if (!widget) return;
   widget.setMessage(text);
