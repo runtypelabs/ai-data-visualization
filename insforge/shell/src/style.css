@@ -317,8 +317,7 @@ html, body { margin: 0; height: 100%; overflow: hidden; }
 }
 #ayb-chat-root .ayb-activity-step.done { color: #343a41; font-weight: 500; }
 #ayb-chat-root .ayb-activity-step.done::before { content: "✓"; color: var(--ayb-green); font-weight: 700; }
-/* Keep standalone tool wrappers aligned without Persona's grouped-mode
-   migration, which remounts the first tool when the second tool arrives. */
+/* Align Persona group rows and standalone tool wrappers consistently. */
 #ayb-chat-root [data-persona-tool-group-row],
 #ayb-chat-root [data-wrapper-id^="tool-"] {
   width: calc(100% - 12px);

@@ -12,7 +12,7 @@
   },
   "dependencies": {
     "@mcp-b/webmcp-polyfill": "^3.0.0",
-    "@runtypelabs/persona": "4.11.0",
+    "@runtypelabs/persona": "4.11.1",
     "echarts": "^6.1.0",
     "flint-chart": "^0.2.1"
   },

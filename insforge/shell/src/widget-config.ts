@@ -112,9 +112,8 @@ export const buildConfig = (auth: AybAuth | null, authEnabled: boolean): AgentWi
       ...DEFAULT_WIDGET_CONFIG.features?.toolCallDisplay,
       collapsedMode: "tool-name",
       activePreview: false,
-      // Persona 4.11 replaces the first standalone tool wrapper when a second
-      // tool arrives in grouped mode. Keep stable per-call wrappers instead of
-      // remounting the activity UI mid-turn.
+      // Keep compact per-call activity rows instead of collapsing sequential
+      // tool work into a single group summary.
       grouped: false,
       expandable: false,
       loadingAnimation: "none",
