@@ -15,6 +15,8 @@ export interface AybPageConfig {
   sampleDataset?: boolean;
   /** Demo logins surfaced as one-click fills on the sign-in card. */
   demoAccounts?: Array<{ email: string; password: string; label?: string }>;
+  /** Log safe request/SSE timing milestones to the browser console. */
+  debugTimings?: boolean;
 }
 
 const PAGE_CONFIG: AybPageConfig =
@@ -27,6 +29,9 @@ export const INSFORGE_ANON_KEY = PAGE_CONFIG.insforgeAnonKey ?? "";
 export const PRODUCT_NAME = PAGE_CONFIG.productName ?? "AI Data Visualization";
 export const IS_SAMPLE_DATASET = PAGE_CONFIG.sampleDataset !== false;
 export const DEMO_ACCOUNTS = PAGE_CONFIG.demoAccounts ?? [];
+export const DEBUG_TIMINGS =
+  PAGE_CONFIG.debugTimings === true ||
+  new URLSearchParams(window.location.search).get("aybDebug") === "timings";
 
 // Each default pill is phrased to imply a period AND a breakdown, so the
 // analyst's own SQL returns a multi-series result rather than one aggregate row

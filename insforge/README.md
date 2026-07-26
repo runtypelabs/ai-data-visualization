@@ -21,10 +21,10 @@ you ──▶ https://<your-app>.insforge.app/functions/ai-data-visualization   
              │  Persona chat (Runtype client token + identityProof)
              ▼
         Runtype API ── verifies proof, runs agent AS the end user  (runtype.config.json)
-             │   insforge_list_tables ──▶ InsForge Postgres (schema metadata)
-             │   insforge_run_sql (page tool) ──▶ run_analyst_sql RPC with YOUR JWT
-             │                                    └─ Postgres RLS scopes rows per user
-             │   create_flint_chart  ──▶ interactive chart in the page (WebMCP)
+             │   insforge_run_sql (page tool) ──▶ schema or RLS-scoped SQL
+             │   insforge_query_and_chart ──▶ one RLS query + interactive chart (WebMCP)
+             │                                  └─ Postgres RLS scopes rows per user
+             │   create_flint_chart  ──▶ fallback chart for existing surfaces
              │   insforge_render_chart ──▶ /functions/flint-render ──▶ PNG for Slack
              ▼
         set_reminder / per-user analysis snapshots / Slack replies  (runtype.config.json)
@@ -58,7 +58,7 @@ node scripts/deploy-flint-render.mjs
 **3. Wire the chat embed.** In Runtype (dashboard, CLI, or MCP):
 
 - Create a **client token** for the Business Analyst, bound to the chat surface (`product_surface_id`) — the binding is what admits the page's WebMCP chart tool — with `https://<your-app>.insforge.app` in `allowedOrigins`.
-- Enable **WebMCP** on the chat surface: `behavior.webmcp = { enabled: true, allowlist: [{ origin: "https://<your-app>.insforge.app", tools: ["create_flint_chart"] }] }`.
+- Enable **WebMCP** on the chat surface: `behavior.webmcp = { enabled: true, allowlist: [{ origin: "https://<your-app>.insforge.app", tools: ["insforge_run_sql", "insforge_query_and_chart", "create_flint_chart"] }] }`. The restored template sets this policy from `insforgeBaseUrl`.
 
 **4. End-user auth + per-user data (optional but recommended):**
 
@@ -88,7 +88,7 @@ curl https://api.runtype.com/v1/identity-integrations \
   }'
 ```
 
-Lock the analyst agent to verified end users (`config.tenancyStrategy = { "preset": "end-user-isolated" }`), remove the admin `insforge_run_sql` saved tool from it (the shell provides the per-user replacement as a page tool), and add `insforge_run_sql` to the chat surface's WebMCP allowlist next to `create_flint_chart`. Note: identity-proof admission is enabled per account; if proofs seem ignored, ask Runtype to enable Identity Exchange admission for yours.
+Lock the analyst agent to verified end users (`config.tenancyStrategy = { "preset": "end-user-isolated" }`), remove the admin `insforge_run_sql` saved tool from it (the shell provides the per-user replacement as a page tool), and allowlist `insforge_run_sql`, `insforge_query_and_chart`, and `create_flint_chart` on the chat surface. Note: identity-proof admission is enabled per account; if proofs seem ignored, ask Runtype to enable Identity Exchange admission for yours.
 
 **5. Deploy the shell:**
 
@@ -104,6 +104,14 @@ Your analyst is live at `https://<your-app>.insforge.app/functions/ai-data-visua
 Pointing at your own database instead of the sample? Set `SAMPLE_DATASET=false` and pass `STARTER_PROMPTS='["...","..."]'` with questions that fit your schema; the agent discovers your tables on its own. `DEMO_ACCOUNTS='[{"email":"...","password":"...","label":"..."}]'` surfaces one-click demo logins on the sign-in card (demo datasets only — these are visible to every visitor).
 
 Prefer the InsForge CLI over these zero-dependency scripts? The equivalents are `insforge db import` (schema + sample data), `insforge functions deploy flint-render --file insforge/functions/flint-render.mjs`, `insforge functions deploy ai-data-visualization` (after config injection — our deploy script does this part), and `insforge secrets add` for any function env.
+
+### Performance diagnostics
+
+Append `?aybDebug=timings` to the shell URL, run a question, then call
+`window.__AYB_DIAGNOSTICS__.print()` in DevTools. The timeline separates
+client init, chat/resume request-to-headers, SSE milestones, browser SQL,
+query-and-chart assembly, and Flint's first render. It records only safe
+metadata — never tokens, SQL, arguments, result rows, or message text.
 
 ## Rebuilding the shell
 
@@ -133,4 +141,4 @@ flow. Then run `cd insforge/shell && npm run dev`; Vite injects the local-only
 - **Native InsForge JWTs carry no `iss`/`aud`**, which Runtype's verifier requires (deliberately, fail-closed). That is the entire reason `ayb-identity` exists: it re-mints the verified native token with pinned `iss`/`aud` and its own JWKS. If InsForge adds `iss`/`aud` claims to native tokens, the bridge can be retired and the integration pointed at the project JWKS directly.
 - **The bridge's ES256 signing key self-provisions** into the `ayb_bridge_signing_keys` table (RLS deny-all; reachable only by the admin plane and the function's own API key).
 - **Access-token TTL is 900s** — the shell refreshes the native session and re-exchanges bridge tokens automatically with a 60s margin.
-- The interactive chart path (`create_flint_chart`) runs entirely in the page via WebMCP; the agent passes SQL result rows to the browser, which compiles them with `flint-chart` and renders with ECharts. The PNG path (`insforge_render_chart`) renders the same spec server-side, so both views of a chart agree by construction.
+- The fast interactive path (`insforge_query_and_chart`) executes one RLS-scoped SQL query and renders its rows in the page in a single WebMCP call. `create_flint_chart` remains as a two-step fallback for older surface policies. The PNG path (`insforge_render_chart`) renders the same Flint spec server-side.

@@ -3,6 +3,7 @@ import type { ChartAssemblyInput } from "flint-chart";
 import type { ECharts, EChartsOption } from "echarts";
 
 import { createTextElement } from "../dom";
+import { recordTiming } from "../telemetry";
 import type { Row } from "../types";
 import { draftFollowUpFromChartClick } from "../widget-session";
 
@@ -235,9 +236,10 @@ const FlintChartRenderer: ComponentRenderer = (rawProps) => {
 
   window.setTimeout(async () => {
     try {
-      const chart = await mountResponsiveFlintChart(root, chartCanvas, props.input, () =>
-        loading.remove(),
-      );
+      const chart = await mountResponsiveFlintChart(root, chartCanvas, props.input, () => {
+        loading.remove();
+        recordTiming("artifact.flint.first_render", { rowCount: rows.length });
+      });
       chart.on("click", draftFollowUpFromChartClick);
     } catch (error) {
       loading.className = "ayb-artifact-error";

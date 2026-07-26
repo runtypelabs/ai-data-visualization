@@ -4,11 +4,12 @@ import {
   type AgentWidgetConfig,
 } from "@runtypelabs/persona";
 
-import { getToolActivityLabel, renderGroupedToolActivity } from "./activity";
+import { getToolActivityLabel } from "./activity";
 import { renderArtifactCard } from "./artifacts";
 import type { AybAuth } from "./auth";
 import { API_URL, CLIENT_TOKEN, IS_SAMPLE_DATASET, PRODUCT_NAME, STARTER_PROMPTS } from "./config";
 import { createTextElement } from "./dom";
+import { recordSseEvent } from "./telemetry";
 import { aybTheme } from "./theme";
 
 export const buildConfig = (auth: AybAuth | null, authEnabled: boolean): AgentWidgetConfig => ({
@@ -16,6 +17,7 @@ export const buildConfig = (auth: AybAuth | null, authEnabled: boolean): AgentWi
   apiUrl: API_URL,
   clientToken: CLIENT_TOKEN,
   parserType: "json",
+  onSSEEvent: recordSseEvent,
   // After Persona's own directive parsing, any PersonaArtifactCard JSON still
   // present as literal text is a leak (the agent sometimes emits the directive
   // twice, or in a spot the parser doesn't recognize) — strip it.
@@ -88,7 +90,6 @@ export const buildConfig = (auth: AybAuth | null, authEnabled: boolean): AgentWi
         text,
       );
     },
-    renderGroupedSummary: ({ toolCalls }) => renderGroupedToolActivity(toolCalls),
   },
   contextProviders: [
     () => ({
@@ -96,6 +97,8 @@ export const buildConfig = (auth: AybAuth | null, authEnabled: boolean): AgentWi
         product: PRODUCT_NAME,
         database: "InsForge Postgres (live)",
         page: "Analyst workspace",
+        currentTime: new Date().toISOString(),
+        timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
       },
     }),
   ],
@@ -109,10 +112,12 @@ export const buildConfig = (auth: AybAuth | null, authEnabled: boolean): AgentWi
       ...DEFAULT_WIDGET_CONFIG.features?.toolCallDisplay,
       collapsedMode: "tool-name",
       activePreview: false,
-      grouped: true,
-      groupedMode: "summary",
+      // Persona 4.11 replaces the first standalone tool wrapper when a second
+      // tool arrives in grouped mode. Keep stable per-call wrappers instead of
+      // remounting the activity UI mid-turn.
+      grouped: false,
       expandable: false,
-      loadingAnimation: "shimmer-color",
+      loadingAnimation: "none",
     },
     artifacts: {
       enabled: true,
@@ -144,7 +149,9 @@ export const buildConfig = (auth: AybAuth | null, authEnabled: boolean): AgentWi
   },
   webmcp: {
     enabled: true,
-    allowlist: auth ? ["create_flint_chart", "insforge_run_sql"] : ["create_flint_chart"],
+    allowlist: auth
+      ? ["insforge_run_sql", "insforge_query_and_chart", "create_flint_chart"]
+      : ["create_flint_chart"],
     autoApprove: () => true,
   },
   layout: {

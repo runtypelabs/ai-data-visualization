@@ -3,10 +3,77 @@ import type { ChartAssemblyInput } from "flint-chart";
 import { FLINT_COMPONENT } from "../artifacts/flint-chart";
 import type { Row } from "../types";
 import { getWidget } from "../widget-session";
+import { startTiming } from "../telemetry";
 import { normalizeEncodings, normalizeRows, normalizeSemanticTypes, unquote } from "./normalize";
 import type { RegisterableModelContext } from "./types";
 
-const createFlintArtifact = async ({
+export const FLINT_CHART_TYPES = [
+  "Line Chart",
+  "Area Chart",
+  "Range Area Chart",
+  "Streamgraph",
+  "Bar Chart",
+  "Grouped Bar Chart",
+  "Stacked Bar Chart",
+  "Waterfall Chart",
+  "Lollipop Chart",
+  "Pyramid Chart",
+  "Bullet Chart",
+  "Ranged Dot Plot",
+  "Slope Chart",
+  "Bump Chart",
+  "Scatter Plot",
+  "Connected Scatter Plot",
+  "Regression",
+  "Strip Plot",
+  "Boxplot",
+  "Histogram",
+  "Density Plot",
+  "ECDF Plot",
+  "Heatmap",
+  "Calendar Heatmap",
+  "Radar Chart",
+  "Rose Chart",
+  "Pie Chart",
+  "Funnel Chart",
+  "Gauge Chart",
+  "Sunburst Chart",
+  "Treemap",
+  "Tree",
+  "Sankey Diagram",
+  "Network Graph",
+  "Parallel Coordinates",
+  "Gantt Chart",
+  "Candlestick Chart",
+] as const;
+
+export const FLINT_SEMANTIC_TYPES = [
+  "Date",
+  "Week",
+  "Month",
+  "Quarter",
+  "Year",
+  "YearMonth",
+  "Duration",
+  "Quantity",
+  "Count",
+  "Amount",
+  "Price",
+  "Percentage",
+  "PercentageChange",
+  "Profit",
+  "Score",
+  "Rank",
+  "Range",
+  "Number",
+  "Category",
+  "Name",
+  "Status",
+  "Region",
+  "ID",
+] as const;
+
+export const createFlintArtifact = async ({
   title,
   description,
   sql,
@@ -78,11 +145,8 @@ export const registerCreateFlintChartTool = (
           },
           chartType: {
             type: "string",
-            // Exactly the ECharts template names Flint 0.2.2 registers
-            // (ecAllTemplateDefs). An unrecognized name throws at assembly, so
-            // this list is the contract — notably there is no "Donut Chart".
-            description:
-              'An exact Flint chart type name, case-sensitive. One of: Line Chart, Area Chart, Range Area Chart, Streamgraph, Bar Chart, Grouped Bar Chart, Stacked Bar Chart, Waterfall Chart, Lollipop Chart, Pyramid Chart, Bullet Chart, Ranged Dot Plot, Slope Chart, Bump Chart, Scatter Plot, Connected Scatter Plot, Regression, Strip Plot, Boxplot, Histogram, Density Plot, ECDF Plot, Heatmap, Calendar Heatmap, Radar Chart, Rose Chart, Pie Chart, Funnel Chart, Gauge Chart, Sunburst Chart, Treemap, Tree, Sankey Diagram, Network Graph, Parallel Coordinates, Gantt Chart, Candlestick Chart. Prefer the expressive form the data supports (Bullet Chart for actual vs target, Slope Chart for two-period change, Bump Chart for rank churn, Waterfall Chart for variance, Streamgraph for composition over time, Boxplot for spread) over a plain Bar Chart. There is no "Donut Chart" — use Pie Chart.',
+            enum: FLINT_CHART_TYPES,
+            description: "An exact, case-sensitive Flint chart type.",
           },
           encodings: {
             type: "object",
@@ -99,7 +163,7 @@ export const registerCreateFlintChartTool = (
             type: "object",
             description:
               'Map every encoded field to a Flint semantic type, e.g. {"site_code":"Category","variance_tons":"Quantity"}. Time: Date, Week, Month, Quarter, Year, YearMonth, Duration. Measures: Quantity, Count, Amount, Price, Percentage, PercentageChange, Profit, Score, Rank, Range, Number. Labels: Category, Name, Status, Region, ID.',
-            additionalProperties: { type: "string" },
+            additionalProperties: { type: "string", enum: FLINT_SEMANTIC_TYPES },
           },
           rows: {
             type: "array",
@@ -129,24 +193,35 @@ export const registerCreateFlintChartTool = (
         ) {
           throw new Error("title, description, sql, and chartType are required strings.");
         }
-        const artifact = await createFlintArtifact({
-          title,
-          description,
-          sql,
-          chartType,
-          encodings,
-          semanticTypes,
-          rows: normalizeRows(rows),
+        const normalizedRows = normalizeRows(rows);
+        const complete = startTiming("tool.client.create_flint_chart", {
+          rowCount: normalizedRows.length,
         });
-        return {
-          created: true,
-          artifactId: artifact.artifactId,
-          title: title.trim(),
-          chartType,
-          plottedRows: artifact.plottedRows,
-          message:
-            "The interactive chart is open in the analysis workspace. Now finish your reply in chat: the answer first, the key numbers, the recommended priority, your definitions, and the SQL appendix.",
-        };
+        try {
+          const artifact = await createFlintArtifact({
+            title,
+            description,
+            sql,
+            chartType,
+            encodings,
+            semanticTypes,
+            rows: normalizedRows,
+          });
+          complete({ plottedRows: artifact.plottedRows });
+          return {
+            created: true,
+            artifactId: artifact.artifactId,
+            title: title.trim(),
+            chartType,
+            plottedRows: artifact.plottedRows,
+            finalizeWithoutMoreTools: true,
+            message:
+              "The interactive chart is open. This tool result is terminal for the current request: do not call schema, SQL, time, chart, record, or any other tool again. Finish the chat reply now from the SQL and rows already present in this tool call.",
+          };
+        } catch (error) {
+          complete({ error: true });
+          throw error;
+        }
       },
     },
     { signal },

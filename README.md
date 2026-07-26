@@ -64,6 +64,11 @@ flowchart LR
 
 Runtype supplies the intelligence: schema discovery, inspectable text-to-SQL, generated dashboards, actions, monitoring. [InsForge](https://insforge.dev) supplies the backend — Postgres, auth, edge functions serving the web app. Point the template at a different database and the same config becomes an analyst for whatever your data tracks: the agents discover your schema live, nothing is hard-coded.
 
+Working on browser-tool latency? See the
+[Runtype local-tool resume analysis](./docs/runtype-local-tool-resume.md) for
+the reproduced loop, measurements, app mitigation, and recommended runtime
+regression test.
+
 ## Deploy the full demo
 
 **1. The Runtype half** — restore `runtype.config.json` as above.

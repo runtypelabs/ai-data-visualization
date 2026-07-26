@@ -297,14 +297,7 @@ html, body { margin: 0; height: 100%; overflow: hidden; }
 .ayb-setup-notice strong { display: block; font-size: 14px; font-weight: 660; }
 .ayb-setup-notice p { margin: 10px 0 0; color: var(--ayb-muted); font-size: 12px; line-height: 1.6; }
 
-/* ── Grouped tool-activity checklist ─────────────────────── */
-#ayb-chat-root .ayb-activity-steps {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 5px;
-  padding: 4px 0;
-}
+/* ── Stable tool activity ────────────────────────────────── */
 #ayb-chat-root .ayb-activity-step {
   display: inline-flex;
   align-items: center;
@@ -315,26 +308,17 @@ html, body { margin: 0; height: 100%; overflow: hidden; }
   font-weight: 500;
   line-height: 1.35;
 }
-#ayb-chat-root .ayb-activity-step:not(.done):not(.ready)::before {
+#ayb-chat-root .ayb-activity-step:not(.done)::before {
   content: "";
   width: 6px;
   height: 6px;
   border-radius: 50%;
   background: var(--ayb-accent);
-  animation: ayb-step-pulse 1.1s ease-in-out infinite;
 }
 #ayb-chat-root .ayb-activity-step.done { color: #343a41; font-weight: 500; }
 #ayb-chat-root .ayb-activity-step.done::before { content: "✓"; color: var(--ayb-green); font-weight: 700; }
-#ayb-chat-root .ayb-activity-step.ready { color: #343a41; font-weight: 500; }
-#ayb-chat-root .ayb-activity-step.ready::before {
-  content: "✓";
-  color: var(--ayb-green);
-  font-weight: 700;
-}
-@keyframes ayb-step-pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
-
-/* Persona's grouped-tool layout adds a timeline rail around the custom
-   checklist. Keep grouping behavior, but let the checkmarks carry the state. */
+/* Keep standalone tool wrappers aligned without Persona's grouped-mode
+   migration, which remounts the first tool when the second tool arrives. */
 #ayb-chat-root [data-persona-tool-group-row],
 #ayb-chat-root [data-wrapper-id^="tool-"] {
   width: calc(100% - 12px);

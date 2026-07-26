@@ -1,10 +1,60 @@
 import type { AybAuth } from "../auth";
 import { INSFORGE_BASE } from "../config";
+import { startTiming } from "../telemetry";
 import type { Row } from "../types";
 import type { RegisterableModelContext } from "./types";
 
 const MAX_SQL_RESULT_ROWS = 500;
 const MAX_SQL_RESULT_CHARS = 150_000;
+
+export type SqlResult = {
+  rows: Row[];
+  rowCount: number;
+  note?: string;
+};
+
+export const runSqlAsUser = async (auth: AybAuth, query: string): Promise<SqlResult> => {
+  const complete = startTiming("tool.client.sql_execution");
+  try {
+    const token = await auth.getFreshAccessToken();
+    const response = await fetch(`${INSFORGE_BASE}/api/database/rpc/run_analyst_sql`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+      body: JSON.stringify({ query: query.trim() }),
+    });
+    const bodyText = await response.text();
+    if (!response.ok) {
+      let message = bodyText.slice(0, 400);
+      try {
+        const parsed = JSON.parse(bodyText) as { message?: string; error?: string };
+        message = parsed.message ?? parsed.error ?? message;
+      } catch {
+        /* keep raw text */
+      }
+      throw new Error(`SQL failed (${response.status}): ${message}`);
+    }
+    const rows = JSON.parse(bodyText) as Row[];
+    if (!Array.isArray(rows)) {
+      complete({ rowCount: 0 });
+      return { rows: [], rowCount: 0 };
+    }
+    let limited = rows.slice(0, MAX_SQL_RESULT_ROWS);
+    if (JSON.stringify(limited).length > MAX_SQL_RESULT_CHARS) {
+      limited = limited.slice(0, 100);
+    }
+    complete({ rowCount: rows.length, returnedRows: limited.length });
+    return {
+      rows: limited,
+      rowCount: rows.length,
+      ...(limited.length < rows.length
+        ? { note: `Truncated to the first ${limited.length} of ${rows.length} rows.` }
+        : {}),
+    };
+  } catch (error) {
+    complete({ error: true });
+    throw error;
+  }
+};
 
 /**
  * The RLS-scoped SQL tool. Executes in the browser with the signed-in user's
@@ -39,36 +89,7 @@ export const registerRunSqlTool = (
         if (typeof query !== "string" || !query.trim()) {
           throw new Error("query must be a non-empty SQL string.");
         }
-        const token = await auth.getFreshAccessToken();
-        const response = await fetch(`${INSFORGE_BASE}/api/database/rpc/run_analyst_sql`, {
-          method: "POST",
-          headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
-          body: JSON.stringify({ query: query.trim() }),
-        });
-        const bodyText = await response.text();
-        if (!response.ok) {
-          let message = bodyText.slice(0, 400);
-          try {
-            const parsed = JSON.parse(bodyText) as { message?: string; error?: string };
-            message = parsed.message ?? parsed.error ?? message;
-          } catch {
-            /* keep raw text */
-          }
-          throw new Error(`SQL failed (${response.status}): ${message}`);
-        }
-        const rows = JSON.parse(bodyText) as Row[];
-        if (!Array.isArray(rows)) return { rows: [], rowCount: 0 };
-        let limited = rows.slice(0, MAX_SQL_RESULT_ROWS);
-        if (JSON.stringify(limited).length > MAX_SQL_RESULT_CHARS) {
-          limited = limited.slice(0, 100);
-        }
-        return {
-          rows: limited,
-          rowCount: rows.length,
-          ...(limited.length < rows.length
-            ? { note: `Truncated to the first ${limited.length} of ${rows.length} rows.` }
-            : {}),
-        };
+        return runSqlAsUser(auth, query);
       },
     },
     { signal },

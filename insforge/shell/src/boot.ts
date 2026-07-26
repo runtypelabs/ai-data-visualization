@@ -6,6 +6,7 @@ import { installCodeBlockCopyButtons } from "./enhancements/code-copy";
 import { installProofInjector } from "./enhancements/proof-injector";
 import { installSuggestionScrollAffordance } from "./enhancements/suggestion-scroll";
 import { registerPageTools } from "./tools";
+import { installRequestTiming, installWidgetTiming } from "./telemetry";
 import { buildConfig } from "./widget-config";
 import { getWidget, setWidget } from "./widget-session";
 
@@ -23,6 +24,7 @@ registerArtifactComponents();
 
 export const bootWidget = (mount: HTMLElement, auth: AybAuth | null, authEnabled: boolean): void => {
   if (auth) installProofInjector(auth);
+  installRequestTiming();
   registerPageTools(auth);
   installCodeBlockCopyButtons(mount);
   installSuggestionScrollAffordance(mount);
@@ -37,6 +39,7 @@ export const bootWidget = (mount: HTMLElement, auth: AybAuth | null, authEnabled
 
   const widget = getWidget();
   if (!widget) return;
+  installWidgetTiming(widget);
 
   const currentUserId = auth?.user?.id ?? "anonymous";
   const lastUserId = localStorage.getItem(LAST_USER_STORAGE_KEY);
