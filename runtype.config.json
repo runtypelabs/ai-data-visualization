@@ -440,11 +440,15 @@
         "description": "Model used by the conversational analyst. A stronger model writes better SQL and clearer explanations.",
         "inputType": "select",
         "required": true,
-        "defaultValue": "claude-sonnet-4-6",
+        "defaultValue": "vercel:zhipu/glm-5.2-fast",
         "placeholder": "Select a model",
         "options": [
           {
-            "label": "Claude Sonnet 4.6 (recommended)",
+            "label": "GLM 5.2 Fast via Vercel (recommended)",
+            "value": "vercel:zhipu/glm-5.2-fast"
+          },
+          {
+            "label": "Claude Sonnet 4.6",
             "value": "claude-sonnet-4-6"
           },
           {
