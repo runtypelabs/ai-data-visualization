@@ -437,15 +437,19 @@
       {
         "key": "analystModel",
         "label": "Analyst model",
-        "description": "Model used by the conversational analyst. A stronger model writes better SQL and clearer explanations.",
+        "description": "Model used by the conversational analyst. A stronger model writes better SQL and clearer explanations. Model ids are given unprefixed so Runtype routes them to whichever provider is available for that model rather than pinning one.",
         "inputType": "select",
         "required": true,
-        "defaultValue": "vercel:zhipu/glm-5.2-fast",
+        "defaultValue": "glm-5.2",
         "placeholder": "Select a model",
         "options": [
           {
-            "label": "GLM 5.2 Fast via Vercel (recommended)",
-            "value": "vercel:zhipu/glm-5.2-fast"
+            "label": "GLM 5.2 (recommended)",
+            "value": "glm-5.2"
+          },
+          {
+            "label": "GLM 5.2 Fast",
+            "value": "glm-5.2-fast"
           },
           {
             "label": "Claude Sonnet 4.6",
@@ -454,10 +458,6 @@
           {
             "label": "Claude Opus 4.8 (deepest analysis)",
             "value": "claude-opus-4-8"
-          },
-          {
-            "label": "GPT-5 (balanced)",
-            "value": "gpt-5"
           }
         ]
       },
