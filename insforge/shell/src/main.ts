@@ -55,15 +55,10 @@ if (!CLIENT_TOKEN || !INSFORGE_BASE) {
       renderUserChip(auth, user);
       bootWidget(mount, auth, true);
     } else {
-      renderSignInCard(
-        mount,
-        auth,
-        (signedIn) => {
-          renderUserChip(auth, signedIn);
-          bootWidget(mount, auth, true);
-        },
-        () => bootWidget(mount, null, true),
-      );
+      renderSignInCard(mount, auth, (signedIn) => {
+        renderUserChip(auth, signedIn);
+        bootWidget(mount, auth, true);
+      });
     }
   });
 }

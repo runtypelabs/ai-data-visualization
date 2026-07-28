@@ -887,18 +887,6 @@ html, body { margin: 0; height: 100%; overflow: hidden; }
   cursor: pointer;
 }
 .ayb-signin-demo-btn:hover { background: #e8ebee; }
-.ayb-signin-skip {
-  align-self: flex-start;
-  padding: 0;
-  border: none;
-  background: none;
-  font-family: inherit;
-  font-size: 11.5px;
-  color: var(--ayb-muted);
-  text-decoration: underline;
-  cursor: pointer;
-}
-.ayb-signin-skip:hover { color: var(--ayb-text); }
 .ayb-user-chip {
   display: inline-flex;
   align-items: center;

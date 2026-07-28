@@ -502,11 +502,15 @@
         "description": "Model used by the conversational analyst. A stronger model writes better SQL and clearer explanations. Model ids are given unprefixed so Runtype routes them to whichever provider is available for that model rather than pinning one.",
         "inputType": "select",
         "required": true,
-        "defaultValue": "glm-5.2",
+        "defaultValue": "gemini-3.6-flash",
         "placeholder": "Select a model",
         "options": [
           {
-            "label": "GLM 5.2 (recommended)",
+            "label": "Gemini 3.6 Flash (recommended)",
+            "value": "gemini-3.6-flash"
+          },
+          {
+            "label": "GLM 5.2",
             "value": "glm-5.2"
           },
           {

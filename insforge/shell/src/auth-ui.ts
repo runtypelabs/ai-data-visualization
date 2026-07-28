@@ -23,7 +23,6 @@ export const renderSignInCard = (
   mount: HTMLElement,
   auth: AybAuth,
   onSignedIn: (user: AybUser) => void,
-  onSkip: () => void,
 ): void => {
   const card = document.createElement("section");
   card.className = "ayb-signin";
@@ -95,18 +94,6 @@ export const renderSignInCard = (
     }
     card.appendChild(demo);
   }
-
-  const skip = createTextElement(
-    "button",
-    "ayb-signin-skip",
-    "Continue without signing in (see the isolation policy refuse you)",
-  ) as HTMLButtonElement;
-  skip.type = "button";
-  skip.addEventListener("click", () => {
-    card.remove();
-    onSkip();
-  });
-  card.appendChild(skip);
 
   mount.appendChild(card);
 };
