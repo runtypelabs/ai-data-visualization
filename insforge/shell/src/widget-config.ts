@@ -184,7 +184,7 @@ export const buildConfig = (auth: AybAuth | null, authEnabled: boolean): AgentWi
     },
   },
   // identityProof injection happens in a window.fetch wrapper (see
-  // installProofInjector), NOT here: Persona 4.11's client-token dispatch
+  // installProofInjector), NOT here: Persona 4.14's client-token dispatch
   // calls bare fetch() directly, bypassing both customFetch (non-client-token
   // mode only) and, in practice, requestMiddleware-added fields. Verified
   // empirically against /v1/client/chat.

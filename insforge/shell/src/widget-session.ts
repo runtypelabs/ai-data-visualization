@@ -10,15 +10,7 @@ export const setWidget = (handle: AgentWidgetInitHandle): void => {
 
 export const sendPrompt = (text: string): void => {
   if (!widget) return;
-  widget.setMessage(text);
-  widget.focusInput();
-  // The 4.8 handle has no programmatic send; submit the composer form once
-  // setMessage's render has landed the draft in the DOM.
-  window.setTimeout(() => {
-    const form = document.querySelector<HTMLFormElement>("form[data-persona-composer-form]");
-    const input = form?.querySelector<HTMLTextAreaElement>("[data-persona-composer-input]");
-    if (form && input && input.value.trim().length > 0) form.requestSubmit();
-  }, 150);
+  widget.submitMessage(text);
 };
 
 export const draftFollowUpFromChartClick = (params: unknown): void => {

@@ -157,7 +157,6 @@ export const aybTheme: NonNullable<AgentWidgetConfig["theme"]> = {
       shadow: "none",
     },
     input: {
-      background: "#ffffff",
       placeholder: "#99a2ad",
       borderRadius: "12px",
       focus: { border: "#aeb5bd", ring: "rgba(23, 24, 26, 0.12)" },
