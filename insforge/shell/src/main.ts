@@ -40,7 +40,7 @@ if (!CLIENT_TOKEN || !INSFORGE_BASE) {
       "p",
       "",
       import.meta.env.DEV
-        ? "For local development, add RUNTYPE_CLIENT_TOKEN to the repo-root .env.local and restart Vite. The InsForge URL can come from INSFORGE_BASE_URL or NEXT_PUBLIC_INSFORGE_URL."
+        ? "For local development, add RUNTYPE_CLIENT_TOKEN to insforge/.env.local (or the repo-root .env.local) and restart Vite. The InsForge URL can come from INSFORGE_BASE_URL or NEXT_PUBLIC_INSFORGE_URL."
         : "The serving function must inject window.__AYB_CONFIG__ with apiUrl, clientToken (a Runtype client token bound to your chat surface), and insforgeBaseUrl. See the deploy script in the ai-data-visualization repo.",
     ),
   );

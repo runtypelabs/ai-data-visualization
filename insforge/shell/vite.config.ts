@@ -4,9 +4,14 @@ import { defineConfig, loadEnv } from "vite";
 import { viteSingleFile } from "vite-plugin-singlefile";
 
 export default defineConfig(({ command, mode }) => {
-  // The documented .env.local lives at the repository root, two levels above
-  // this shell directory.
-  const env = loadEnv(mode, resolve(__dirname, "../.."), "");
+  // Existing InsForge checkouts keep local credentials one level above this
+  // shell. Also accept the documented repo-root location, with the closer
+  // InsForge env taking precedence when both exist.
+  const repoEnv = loadEnv(mode, resolve(__dirname, "../.."), "");
+  const env = {
+    ...repoEnv,
+    ...loadEnv(mode, resolve(__dirname, ".."), ""),
+  };
   const localRuntimeConfig = {
     apiUrl: env.RUNTYPE_API_URL || "https://api.runtype.com",
     clientToken: env.RUNTYPE_CLIENT_TOKEN || "",

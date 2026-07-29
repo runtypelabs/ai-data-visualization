@@ -31,7 +31,7 @@ export const buildConfig = (auth: AybAuth | null, authEnabled: boolean): AgentWi
   copy: {
     ...DEFAULT_WIDGET_CONFIG.copy,
     showWelcomeCard: true,
-    welcomeTitle: "AI Data Visualization",
+    welcomeTitle: "Talk to your data",
     welcomeSubtitle: IS_SAMPLE_DATASET
       ? "Explore live performance, risk, costs, and what needs attention next. This workspace uses fictional sample data."
       : "Explore live performance, risk, costs, and what needs attention next.",

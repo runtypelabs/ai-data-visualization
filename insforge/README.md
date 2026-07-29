@@ -121,7 +121,8 @@ The committed `shell/dist/index.html` is a prebuilt, generic bundle (no secrets 
 cd insforge/shell && npm install && npm run build
 ```
 
-For local development, put the runtime values in the ignored repo-root `.env.local`:
+For local development, put the runtime values in the ignored `insforge/.env.local`
+(a repo-root `.env.local` is also supported):
 
 ```bash
 RUNTYPE_CLIENT_TOKEN=ct_live_...
