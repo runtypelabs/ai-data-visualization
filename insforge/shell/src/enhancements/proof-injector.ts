@@ -4,7 +4,7 @@ import { API_URL } from "../config";
 /**
  * Attach the Runtype-verifiable identityProof (bridge-minted ES256 JWT) to
  * every /v1/client/chat dispatch by wrapping window.fetch. This is the ONLY
- * seam that reliably reaches Persona 4.11's client-token dispatch: that code
+ * seam that reliably reaches Persona 4.14's client-token dispatch: that code
  * path calls bare fetch() directly, so the widget's customFetch (generic mode
  * only) and requestMiddleware hooks never get the proof onto the wire.
  */
