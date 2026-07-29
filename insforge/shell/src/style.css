@@ -139,6 +139,34 @@ html, body { margin: 0; height: 100%; overflow: hidden; }
   padding-inline: 12px;
 }
 
+/* Keep transcript position feedback quiet in the split workspace. The thumb
+   appears when the chat is hovered or contains keyboard focus; artifact and
+   table scrollbars retain their own native treatment. */
+#ayb-chat-root #persona-scroll-container {
+  scrollbar-width: thin;
+  scrollbar-color: transparent transparent;
+}
+#ayb-chat-root #persona-scroll-container:hover,
+#ayb-chat-root #persona-scroll-container:focus-within {
+  scrollbar-color: rgba(65, 73, 80, 0.34) transparent;
+}
+#ayb-chat-root #persona-scroll-container::-webkit-scrollbar {
+  width: 6px;
+}
+#ayb-chat-root #persona-scroll-container::-webkit-scrollbar-track {
+  background: transparent;
+}
+#ayb-chat-root #persona-scroll-container::-webkit-scrollbar-thumb {
+  border: 1px solid transparent;
+  border-radius: 999px;
+  background: transparent;
+  background-clip: padding-box;
+}
+#ayb-chat-root #persona-scroll-container:hover::-webkit-scrollbar-thumb,
+#ayb-chat-root #persona-scroll-container:focus-within::-webkit-scrollbar-thumb {
+  background-color: rgba(65, 73, 80, 0.34);
+}
+
 /* Persona's welcome card ships with fixed utility typography and 24px of
    padding. Bring it onto the same display scale and left edge as artifacts. */
 #ayb-chat-root [data-persona-intro-card] {
