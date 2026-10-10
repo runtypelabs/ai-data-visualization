@@ -6,8 +6,11 @@ export interface RegisterableModelContext {
       description: string;
       inputSchema?: object;
       annotations?: Record<string, unknown>;
-      execute: (args: Record<string, unknown>) => unknown;
+      execute: (
+        args: Record<string, unknown>,
+        options?: { signal?: AbortSignal },
+      ) => unknown;
     },
     options?: { signal?: AbortSignal },
-  ): void;
+  ): unknown;
 }

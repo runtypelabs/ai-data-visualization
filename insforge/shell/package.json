@@ -11,8 +11,8 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@mcp-b/webmcp-polyfill": "^3.0.0",
-    "@runtypelabs/persona": "4.14.0",
+    "@mcp-b/webmcp-polyfill": "^6.0.0",
+    "@runtypelabs/persona": "4.28.1",
     "echarts": "^6.1.0",
     "flint-chart": "^0.2.1"
   },
